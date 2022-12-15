@@ -9,7 +9,6 @@ body {
   font-family: "Source Sans Pro", sans-serif;
   width: 100%;
   height: 100vh;
-  background-image: url("/public/background.png");
   position: fixed;
   left: 0;
   top: 0;

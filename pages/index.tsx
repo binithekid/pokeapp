@@ -1,35 +1,31 @@
 import React, { useState } from "react";
-import background from "../public/background.png";
 import pokemonLogo from "../public/pokemonLogo.svg";
 import Image from "next/image";
 import axios from "axios";
 
 export default function Home({ pokemon }: any) {
-  const [randomise, setRandomise] = useState({});
+  const [randomise, setRandomise] = useState<any>({});
   const [showPokemon, setShowPokemon] = useState(false);
 
-  const randomPokemon =
-    pokemon.results[Math.floor(Math.random() * pokemon.results.length)].name;
-
-  const PokeFetch = (randomPokemon: string) => {
+  const getRandomPokemon = () => {
+    const randomPokemon =
+      pokemon.results[Math.floor(Math.random() * pokemon.results.length)].name;
     axios
       .get(
         `https://pokeapi.co/api/v2/pokemon/${randomPokemon}
-`
+  `
       )
       .then((response) => {
         setRandomise(response.data);
         setShowPokemon(true);
       })
       .catch((err) => {
-        console.log(err);
+        console.error(err);
       });
   };
 
   return (
-    <div
-      className='bg-no-repeat bg-center bg-cover h-screen w-screen'
-      style={{ backgroundImage: `url(${background.src})` }}>
+    <div className='bg-image'>
       <div className='flex items-center justify-center h-screen flex-col'>
         <Image src={pokemonLogo.src} alt='Poke logo' width={400} height={400} />
         <p className='font-fugaz-one text-2xl -mt-5 mb-7'>BATTLE</p>
@@ -44,7 +40,7 @@ export default function Home({ pokemon }: any) {
         </form>
         <p className='mb-1 mt-1 font-press-start text-xs'>or</p>
         <button
-          onClick={() => PokeFetch(randomPokemon)}
+          onClick={() => getRandomPokemon()}
           className='font-press-start text-sm transition-ease-in-out duration-300 hover:opacity-80'>
           Randomise
         </button>
@@ -69,15 +65,11 @@ export default function Home({ pokemon }: any) {
   );
 }
 
-export async function getStaticProps() {
+Home.getInitialProps = async () => {
   const res = await fetch(
     "https://pokeapi.co/api/v2/pokemon?limit=500&offset=0"
   );
   const pokemon = await res.json();
 
-  return {
-    props: {
-      pokemon,
-    },
-  };
-}
+  return { pokemon };
+};
