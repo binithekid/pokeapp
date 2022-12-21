@@ -5,13 +5,14 @@ import axios from "axios";
 import { FormEvent, ChangeEvent } from "../types/types";
 import BattleArena from "../components/BattleArena";
 import pokesong from "../assets/pokesong.wav";
+import { PokemonData, Pokemon } from "../types/types";
 
-export default function Home({ pokemon }: any) {
-  const [selectedPokemon, setSelectedPokemon] = useState<any>(null);
+export default function Home({ pokemon }: PokemonData) {
+  const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null);
   const [showPokemon, setShowPokemon] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [errorMessage, setErrorMessage] = useState(false);
-  const [opposition, setOpposition] = useState<any>(null);
+  const [opposition, setOpposition] = useState<Pokemon | null>(null);
   const [startBattle, setStartBattle] = useState(false);
   const [playerHP, setPlayerHP] = useState(500);
   const [opponentHP, setOpponentHP] = useState(500);
@@ -86,8 +87,9 @@ export default function Home({ pokemon }: any) {
   };
 
   function controlAudio() {
-    const audioElement: any = document.querySelector("#bg-audio");
-    audioElement.setAttribute("loop", "");
+    const audioElement: HTMLAudioElement | null =
+      document.querySelector("#bg-audio");
+    audioElement?.setAttribute("loop", "");
     audioElement?.play();
   }
 
@@ -144,14 +146,16 @@ export default function Home({ pokemon }: any) {
           {showPokemon && (
             <div className='flex flex-col mt-3 p-3 justify-center items-center border-double border-4 border-indigo-600 bg-slate-300 bg-opacity-50'>
               <p className='text-center	font-press-start text-xs'>
-                {selectedPokemon.name}
+                {selectedPokemon?.name}
               </p>
-              <Image
-                src={selectedPokemon.sprites.other.home.front_default}
-                height={100}
-                width={100}
-                alt={selectedPokemon.name}
-              />
+              {selectedPokemon && (
+                <Image
+                  src={selectedPokemon?.sprites?.other.home.front_default}
+                  height={100}
+                  width={100}
+                  alt={selectedPokemon?.name}
+                />
+              )}
             </div>
           )}
           <button

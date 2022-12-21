@@ -1,7 +1,6 @@
 import React from "react";
 
-function ProgressBar(props: any) {
-  const { value, maxValue } = props;
+function ProgressBar({ value, maxValue }: { value: number; maxValue: number }) {
   const percentage = (value / maxValue) * 100;
 
   return (

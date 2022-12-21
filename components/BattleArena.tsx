@@ -5,6 +5,7 @@ import ProgressBar from "./ProgressBar";
 import gsap from "gsap";
 import hitsound from "../assets/hitsound.wav";
 import useSound from "use-sound";
+import { BattleArenaProps, Moves, MoveData } from "../types/types";
 
 const BattleArena = ({
   opposition,
@@ -14,17 +15,19 @@ const BattleArena = ({
   setOpponentHP,
   playerHP,
   setPlayerHP,
-}: any) => {
-  const [playerMoves, setPlayerMoves] = useState<any>([]);
-  const [oppositionMoves, setOppositionMoves] = useState<any>([]);
+}: BattleArenaProps) => {
+  const [playerMoves, setPlayerMoves] = useState<Moves[]>([]);
+  const [oppositionMoves, setOppositionMoves] = useState<Moves[]>([]);
   const [isDisabled, setIsDisabled] = useState(false);
-  const [moveData, setMoveData] = useState<any>([]);
-  const [oppMoveData, setOppMoveData] = useState<any>([]);
-  const [description, setDescription] = useState<any>(
+  const [moveData, setMoveData] = useState<MoveData[]>([]);
+  const [oppMoveData, setOppMoveData] = useState<MoveData[]>([]);
+  const [description, setDescription] = useState(
     "Choose a move to start the battle!"
   );
   const [reUseMove, setReUseMove] = useState("");
   const [battleOver, setBattleOver] = useState(false);
+
+  console.log(moveData);
 
   //Get 4 moves from list of moves
   function getMultipleRandom(arr: any, num: number) {
@@ -35,13 +38,13 @@ const BattleArena = ({
 
   //Set 4 moves from list of moves
   useEffect(() => {
-    setPlayerMoves(getMultipleRandom(selectedPokemon.moves, 4));
-    setOppositionMoves(getMultipleRandom(opposition.moves, 4));
+    setPlayerMoves(getMultipleRandom(selectedPokemon?.moves, 4));
+    setOppositionMoves(getMultipleRandom(opposition?.moves, 4));
   }, [selectedPokemon, opposition]);
 
   //Set move data
   useEffect(() => {
-    playerMoves.map((item: any) => {
+    playerMoves.map((item: Moves) => {
       axios
         .get(item.move.url)
         .then((response) =>
@@ -52,7 +55,7 @@ const BattleArena = ({
         );
     });
 
-    oppositionMoves.map((item: any) => {
+    oppositionMoves.map((item: Moves) => {
       axios
         .get(item.move.url)
         .then((response) =>
@@ -75,15 +78,15 @@ const BattleArena = ({
       }
     });
     setIsDisabled(true);
-    setDescription(`${selectedPokemon.name} used ${name}`);
+    setDescription(`${selectedPokemon?.name} used ${name}`);
     setReUseMove(name);
 
     setTimeout(() => {
       const randomOppMove =
         oppMoveData[Math.floor(Math.random() * oppMoveData.length)];
       setIsDisabled(false);
-      setPlayerHP(playerHP - randomOppMove?.power);
-      setDescription(`${opposition.name} used ${randomOppMove?.name}`);
+      randomOppMove.power && setPlayerHP(playerHP - randomOppMove?.power);
+      setDescription(`${opposition?.name} used ${randomOppMove?.name}`);
     }, 2000);
   };
 
@@ -98,12 +101,14 @@ const BattleArena = ({
   };
 
   //Animation try
-  const playerRef = useRef<any>();
-  const opponentRef = useRef<any>();
+  const playerRef: React.MutableRefObject<HTMLImageElement | null> =
+    useRef(null);
+  const opponentRef: React.MutableRefObject<HTMLImageElement | null> =
+    useRef(null);
 
   useEffect(() => {
     gsap.fromTo(
-      opponentRef.current,
+      opponentRef?.current,
       {
         scale: 1,
         opacity: 1,
@@ -147,7 +152,7 @@ const BattleArena = ({
       <div className='items-center justify-center flex-col hidden sm:flex'>
         <Image
           className='cursor-pointer'
-          src={pokemonLogo.src}
+          src={pokemonLogo?.src}
           alt='Poke logo'
           width={250}
           height={250}
@@ -162,16 +167,18 @@ const BattleArena = ({
               battleOver ? "w-full" : "w-full sm:w-5/12"
             }  flex items-center justify-center flex-col transition-all ease-in-out duration-1000`}>
             <p className='text-xs sm:text-lg font-press-start'>
-              {selectedPokemon.name}
+              {selectedPokemon?.name}
             </p>
             {opponentHP > 0 && <ProgressBar maxValue={500} value={playerHP} />}
-            <Image
-              ref={playerRef}
-              src={selectedPokemon.sprites.other.home.front_default}
-              height={120}
-              width={120}
-              alt={selectedPokemon.name}
-            />
+            {selectedPokemon && (
+              <Image
+                ref={playerRef}
+                src={selectedPokemon?.sprites.other.home.front_default}
+                height={120}
+                width={120}
+                alt={selectedPokemon?.name}
+              />
+            )}
             {opponentHP > 0 && (
               <div className='grid grid-cols-2 sm:grid-cols-1 md:grid-cols-2 gap-4 mt-4'>
                 {moveData.map((move: any) => (
@@ -205,16 +212,18 @@ const BattleArena = ({
                 : "w-full sm:w-5/12 sm:absolute sm:top-0 sm:right-0"
             }  flex items-center justify-center flex-col transition-all ease-in-out duration-1000`}>
             <p className='text-xs sm:text-lg font-press-start'>
-              {opposition.name}
+              {opposition?.name}
             </p>
             {playerHP > 0 && <ProgressBar maxValue={500} value={opponentHP} />}
-            <Image
-              ref={opponentRef}
-              src={opposition.sprites.other.home.front_default}
-              height={120}
-              width={120}
-              alt={selectedPokemon.name}
-            />
+            {opposition && (
+              <Image
+                ref={opponentRef}
+                src={opposition?.sprites.other.home.front_default}
+                height={120}
+                width={120}
+                alt={opposition?.name}
+              />
+            )}
           </div>
         ) : null}
       </div>
