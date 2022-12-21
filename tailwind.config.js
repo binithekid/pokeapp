@@ -11,6 +11,9 @@ module.exports = {
         "press-start": ['"Press Start 2P"', "cursive"],
         "fugaz-one": ["Fugaz One", "curvsive"],
       },
+      fontSize: {
+        xxs: "0.6rem",
+      },
     },
   },
   plugins: [],
