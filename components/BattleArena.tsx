@@ -6,18 +6,15 @@ import gsap from "gsap";
 import hitsound from "../assets/hitsound.wav";
 import useSound from "use-sound";
 import { BattleArenaProps, Moves, MoveData } from "../types/types";
+import { usePokemonState } from "../hooks/getPokemonState";
+import { getMultipleRandom } from "../functions/functions";
+import Confetti from "react-confetti";
 
 const BattleArena = ({
-  opposition,
-  selectedPokemon,
   pokemonLogo,
-  opponentHP,
-  setOpponentHP,
-  playerHP,
-  setPlayerHP,
+  selectedPokemon,
+  opposition,
 }: BattleArenaProps) => {
-  const [playerMoves, setPlayerMoves] = useState<Moves[]>([]);
-  const [oppositionMoves, setOppositionMoves] = useState<Moves[]>([]);
   const [isDisabled, setIsDisabled] = useState(false);
   const [moveData, setMoveData] = useState<MoveData[]>([]);
   const [oppMoveData, setOppMoveData] = useState<MoveData[]>([]);
@@ -26,55 +23,56 @@ const BattleArena = ({
   );
   const [reUseMove, setReUseMove] = useState("");
   const [battleOver, setBattleOver] = useState(false);
-
-  console.log(moveData);
-
-  //Get 4 moves from list of moves
-  function getMultipleRandom(arr: any, num: number) {
-    const shuffled = [...arr].sort(() => 0.5 - Math.random());
-
-    return shuffled.slice(0, num);
-  }
+  const [state, dispatch] = usePokemonState();
 
   //Set 4 moves from list of moves
   useEffect(() => {
-    setPlayerMoves(getMultipleRandom(selectedPokemon?.moves, 4));
-    setOppositionMoves(getMultipleRandom(opposition?.moves, 4));
-  }, [selectedPokemon, opposition]);
+    dispatch({
+      type: "SET_PLAYER_MOVES",
+      payload: getMultipleRandom(selectedPokemon!.moves, 4),
+    });
+    dispatch({
+      type: "SET_OPPOSITION_MOVES",
+      payload: getMultipleRandom(opposition!.moves, 4),
+    });
+  }, [dispatch, selectedPokemon, opposition]);
 
   //Set move data
   useEffect(() => {
-    playerMoves.map((item: Moves) => {
+    state.playerMoves.map((item: Moves) => {
       axios
         .get(item.move.url)
         .then((response) =>
-          setMoveData((prevArray: any) => [
+          setMoveData((prevArray: MoveData[]) => [
             ...prevArray,
             { name: response.data.name, power: response.data.power },
           ])
         );
     });
 
-    oppositionMoves.map((item: Moves) => {
+    state.oppositionMoves.map((item: Moves) => {
       axios
         .get(item.move.url)
         .then((response) =>
-          setOppMoveData((prevArray: any) => [
+          setOppMoveData((prevArray: MoveData[]) => [
             ...prevArray,
             { name: response.data.name, power: response.data.power },
           ])
         );
     });
-  }, [playerMoves, oppositionMoves]);
+  }, [state.playerMoves, state.oppositionMoves]);
 
   //Sound effect
   const [hitFX] = useSound(hitsound);
 
   //OnClick function
   const moveSelect = (name: string) => {
-    moveData.map((item: any) => {
+    moveData.map((item: MoveData) => {
       if (name === item.name) {
-        setOpponentHP(opponentHP - item.power);
+        dispatch({
+          type: "SET_OPPONENT_HP",
+          payload: state.opponentHP - item!.power,
+        });
       }
     });
     setIsDisabled(true);
@@ -85,22 +83,26 @@ const BattleArena = ({
       const randomOppMove =
         oppMoveData[Math.floor(Math.random() * oppMoveData.length)];
       setIsDisabled(false);
-      randomOppMove.power && setPlayerHP(playerHP - randomOppMove?.power);
+      randomOppMove.power &&
+        dispatch({
+          type: "SET_PLAYER_HP",
+          payload: state.playerHP - randomOppMove?.power,
+        });
       setDescription(`${opposition?.name} used ${randomOppMove?.name}`);
     }, 2000);
   };
 
   useEffect(() => {
-    if (playerHP < 0 || opponentHP < 0) {
+    if (state.playerHP < 0 || state.opponentHP < 0) {
       setBattleOver(true);
     }
-  }, [playerHP, opponentHP]);
+  }, [state.playerHP, state.opponentHP]);
 
   const backToHome = () => {
     window.location.reload();
   };
 
-  //Animation try
+  //Animation
   const playerRef: React.MutableRefObject<HTMLImageElement | null> =
     useRef(null);
   const opponentRef: React.MutableRefObject<HTMLImageElement | null> =
@@ -122,30 +124,31 @@ const BattleArena = ({
       }
     );
 
-    if (opponentHP < 500) {
+    if (state.opponentHP < 500) {
       hitFX();
     }
-  }, [opponentHP, hitFX]);
+  }, [state.opponentHP, hitFX]);
 
   useEffect(() => {
-    gsap.fromTo(
-      playerRef.current,
-      {
-        scale: 1,
-        opacity: 1,
-      },
-      {
-        scale: 1.1,
-        repeat: 1,
-        ease: "elastic",
-        yoyoEase: "power3",
-        opacity: 0.7,
-      }
-    );
-    if (playerHP < 500) {
+    !battleOver &&
+      gsap.fromTo(
+        playerRef.current,
+        {
+          scale: 1,
+          opacity: 1,
+        },
+        {
+          scale: 1.1,
+          repeat: 1,
+          ease: "elastic",
+          yoyoEase: "power3",
+          opacity: 0.7,
+        }
+      );
+    if (state.playerHP < 500 && !battleOver) {
       hitFX();
     }
-  }, [playerHP, hitFX]);
+  }, [battleOver, state.playerHP, hitFX]);
 
   return (
     <div className='flex items-center justify-center h-screen flex-col'>
@@ -161,7 +164,7 @@ const BattleArena = ({
         <p className='font-fugaz-one text-lg -mt-3 mb-7'>BATTLE</p>
       </div>
       <div className='relative flex flex-col sm:flex-row w-2/3 flex-wrap'>
-        {playerHP > 0 ? (
+        {state.playerHP > 0 ? (
           <div
             className={`${
               battleOver ? "w-full" : "w-full sm:w-5/12"
@@ -169,7 +172,9 @@ const BattleArena = ({
             <p className='text-xs sm:text-lg font-press-start'>
               {selectedPokemon?.name}
             </p>
-            {opponentHP > 0 && <ProgressBar maxValue={500} value={playerHP} />}
+            {state.opponentHP > 0 && (
+              <ProgressBar maxValue={500} value={state.playerHP} />
+            )}
             {selectedPokemon && (
               <Image
                 ref={playerRef}
@@ -179,7 +184,7 @@ const BattleArena = ({
                 alt={selectedPokemon?.name}
               />
             )}
-            {opponentHP > 0 && (
+            {state.opponentHP > 0 && (
               <div className='grid grid-cols-2 sm:grid-cols-1 md:grid-cols-2 gap-4 mt-4'>
                 {moveData.map((move: any) => (
                   <div
@@ -197,14 +202,14 @@ const BattleArena = ({
             )}
           </div>
         ) : null}
-        {playerHP > 0 && opponentHP > 0 ? (
+        {state.playerHP > 0 && state.opponentHP > 0 ? (
           <div className='flex items-center justify-center sm:w-2/12 p-8 sm:p-0'>
             <p className='font-press-start text-md md:text-3xl text-red-500 '>
               vs
             </p>
           </div>
         ) : null}
-        {opponentHP > 0 ? (
+        {state.opponentHP > 0 ? (
           <div
             className={`${
               battleOver
@@ -214,7 +219,9 @@ const BattleArena = ({
             <p className='text-xs sm:text-lg font-press-start'>
               {opposition?.name}
             </p>
-            {playerHP > 0 && <ProgressBar maxValue={500} value={opponentHP} />}
+            {state.playerHP > 0 && (
+              <ProgressBar maxValue={500} value={state.opponentHP} />
+            )}
             {opposition && (
               <Image
                 ref={opponentRef}
@@ -230,7 +237,7 @@ const BattleArena = ({
       {battleOver ? (
         <div className='flex flex-col align-center justify-center'>
           <p className='mt-9 font-press-start'>
-            {opponentHP < 0 ? "You are the Winner!" : "You Lose!"}
+            {state.opponentHP < 0 ? "You are the Winner!" : "You Lose!"}
           </p>
           <button
             onClick={() => backToHome()}
@@ -245,6 +252,7 @@ const BattleArena = ({
           </p>
         </div>
       )}
+      {battleOver && state.playerHP > 0 && <Confetti gravity={0.2} />}
     </div>
   );
 };

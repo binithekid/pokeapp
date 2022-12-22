@@ -114,12 +114,6 @@ export interface BattleArenaProps {
   pokemonLogo: {
     src: string;
   };
-  opponentHP: number;
-  setOpponentHP: React.Dispatch<React.SetStateAction<number>>;
-  playerHP: number;
-  setPlayerHP: React.Dispatch<React.SetStateAction<number>>;
-  setStartBattle: React.Dispatch<React.SetStateAction<boolean>>;
-  setShowPokemon: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export interface Moves {
@@ -142,5 +136,5 @@ export interface Moves {
 
 export interface MoveData {
   name: string;
-  power: number | null;
+  power: number;
 }

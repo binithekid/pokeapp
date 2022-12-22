@@ -1,34 +1,23 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useReducer, useState } from "react";
 import pokemonLogo from "../public/pokemonLogo.svg";
 import Image from "next/image";
 import axios from "axios";
 import { FormEvent, ChangeEvent } from "../types/types";
 import BattleArena from "../components/BattleArena";
 import pokesong from "../assets/pokesong.wav";
-import { PokemonData, Pokemon } from "../types/types";
+import { PokemonData } from "../types/types";
+import { usePokemonState } from "../hooks/getPokemonState";
+import { randomItem } from "../functions/functions";
 
 export default function Home({ pokemon }: PokemonData) {
-  const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null);
-  const [showPokemon, setShowPokemon] = useState(false);
-  const [searchText, setSearchText] = useState("");
-  const [errorMessage, setErrorMessage] = useState(false);
-  const [opposition, setOpposition] = useState<Pokemon | null>(null);
-  const [startBattle, setStartBattle] = useState(false);
-  const [playerHP, setPlayerHP] = useState(500);
-  const [opponentHP, setOpponentHP] = useState(500);
+  const [state, dispatch] = usePokemonState();
 
   const getRandomPokemon = () => {
-    const randomPokemon =
-      pokemon.results[Math.floor(Math.random() * pokemon.results.length)].name;
     axios
-      .get(
-        `https://pokeapi.co/api/v2/pokemon/${randomPokemon}
-  `
-      )
+      .get(`https://pokeapi.co/api/v2/pokemon/${randomItem(pokemon)}`)
       .then((response) => {
-        setSelectedPokemon(response.data);
-        setShowPokemon(true);
-        setErrorMessage(false);
+        dispatch({ type: "SET_SELECTED_POKEMON", payload: response.data });
+        dispatch({ type: "SET_ERROR_MESSAGE", payload: false });
       })
       .catch((err) => {
         console.error(err);
@@ -36,28 +25,27 @@ export default function Home({ pokemon }: PokemonData) {
   };
 
   const handleChange = (event: ChangeEvent) => {
-    setSearchText(event.target.value);
+    dispatch({ type: "SET_SEARCH_TEXT", payload: event.target.value });
   };
 
   const handleSearch = (event: FormEvent) => {
     event.preventDefault();
     axios
       .get(
-        `https://pokeapi.co/api/v2/pokemon/${searchText.toLowerCase()}
+        `https://pokeapi.co/api/v2/pokemon/${state.searchText.toLowerCase()}
   `
       )
       .then((response) => {
-        if (searchText.length > 0) {
-          setSelectedPokemon(response.data);
+        if (state.searchText.length > 0) {
+          dispatch({ type: "SET_SELECTED_POKEMON", payload: response.data });
         } else {
           throw new Error();
         }
-        setShowPokemon(true);
-        setErrorMessage(false);
+        dispatch({ type: "SET_ERROR_MESSAGE", payload: false });
       })
       .catch((err) => {
         console.error(err);
-        setErrorMessage(true);
+        dispatch({ type: "SET_ERROR_MESSAGE", payload: true });
       });
   };
 
@@ -70,18 +58,18 @@ export default function Home({ pokemon }: PokemonData) {
   `
       )
       .then((response) => {
-        setOpposition(response.data);
+        dispatch({ type: "SET_OPPOSITION", payload: response.data });
       })
       .catch((err) => {
         console.error(err);
       });
-  }, [pokemon.results]);
+  }, [dispatch, pokemon.results]);
 
   const toBattleArena = () => {
-    if (selectedPokemon) {
-      setStartBattle(true);
+    if (state.selectedPokemon) {
+      dispatch({ type: "SET_START_BATTLE", payload: true });
     } else {
-      setErrorMessage(true);
+      dispatch({ type: "SET_ERROR_MESSAGE", payload: true });
     }
     controlAudio();
   };
@@ -96,17 +84,11 @@ export default function Home({ pokemon }: PokemonData) {
   return (
     <div className='bg-image'>
       <audio src={pokesong} id='bg-audio' />
-      {startBattle ? (
+      {state.startBattle ? (
         <BattleArena
-          opposition={opposition}
-          selectedPokemon={selectedPokemon}
           pokemonLogo={pokemonLogo}
-          setStartBattle={setStartBattle}
-          setShowPokemon={setShowPokemon}
-          playerHP={playerHP}
-          setPlayerHP={setPlayerHP}
-          opponentHP={opponentHP}
-          setOpponentHP={setOpponentHP}
+          selectedPokemon={state.selectedPokemon}
+          opposition={state.opposition}
         />
       ) : (
         <div className='flex items-center justify-center h-screen flex-col'>
@@ -122,7 +104,7 @@ export default function Home({ pokemon }: PokemonData) {
             <input
               type='text'
               name='search'
-              value={searchText}
+              value={state.searchText}
               onChange={handleChange}
               className='shadow-sm  h-8 w-56 p-1 rounded-sm focus:border-teal-500 focus:ring-teal-500 border-slate-400'
             />
@@ -132,7 +114,7 @@ export default function Home({ pokemon }: PokemonData) {
               </p>
             </button>
           </form>
-          {errorMessage && (
+          {state.errorMessage && (
             <p className='font-press-start text-xs text-red-500 pt-2 pb-1'>
               Please enter a valid Pokemon name
             </p>
@@ -143,17 +125,17 @@ export default function Home({ pokemon }: PokemonData) {
             className='font-press-start text-sm transition-ease-in-out duration-300 hover:opacity-80'>
             Randomise
           </button>
-          {showPokemon && (
+          {state.selectedPokemon && (
             <div className='flex flex-col mt-3 p-3 justify-center items-center border-double border-4 border-indigo-600 bg-slate-300 bg-opacity-50'>
               <p className='text-center	font-press-start text-xs'>
-                {selectedPokemon?.name}
+                {state.selectedPokemon?.name}
               </p>
-              {selectedPokemon && (
+              {state.selectedPokemon && (
                 <Image
-                  src={selectedPokemon?.sprites?.other.home.front_default}
+                  src={state.selectedPokemon?.sprites?.other.home.front_default}
                   height={100}
                   width={100}
-                  alt={selectedPokemon?.name}
+                  alt={state.selectedPokemon?.name}
                 />
               )}
             </div>
