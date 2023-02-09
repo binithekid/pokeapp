@@ -8,9 +8,17 @@ import pokesong from "../assets/pokesong.wav";
 import { PokemonData } from "../types/types";
 import { usePokemonState } from "../hooks/getPokemonState";
 import { randomItem } from "../functions/functions";
+import ReactGA from "react-ga";
+
+const TRACKING_ID = "UA-256806376-2";
+ReactGA.initialize(TRACKING_ID);
 
 export default function Home({ pokemon }: PokemonData) {
   const [state, dispatch] = usePokemonState();
+
+  useEffect(() => {
+    ReactGA.pageview(window.location.pathname);
+  }, []);
 
   const getRandomPokemon = () => {
     axios
